@@ -17,3 +17,6 @@ This will start the GUI and then you can do the same, but this time, you can use
 
 If the upload was successfull, the loader will start the uploaded program. 
 
+Machine code is created using the fork of the customasm. It can be found here:
+https://github.com/milanvidakovic/FPGAcustomasm
+ 
