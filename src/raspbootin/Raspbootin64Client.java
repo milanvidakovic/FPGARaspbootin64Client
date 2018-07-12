@@ -50,7 +50,7 @@ public class Raspbootin64Client {
 				if (f.exists() && f.isFile()) {
 
 					long size = f.length();
-					size -= 2048L;
+					size -= 1024L;
 					long sizeToSend = size;
 
 					Thread.sleep(100);
@@ -82,7 +82,7 @@ public class Raspbootin64Client {
 						FileInputStream in = new FileInputStream(f);
 						buffer = new byte[1024];
 						int read, total = 0;
-						for (int i = 0; i < 2048; i++) {
+						for (int i = 0; i < 1024; i++) {
 							in.read();
 						}
 						int sum = 0;
@@ -125,12 +125,15 @@ public class Raspbootin64Client {
 							}
 						}
 					} else {
+						Thread.sleep(100);
 						print.accept("\nERROR, file size error reported by the FPGA: [" + returnSize + "]");
 					}
 				} else {
+					Thread.sleep(100);
 					print.accept("\nERROR, File " + fileName + " does not exist, or is a folder!");
 				}
 			} else {
+				Thread.sleep(100);
 				print.accept("\nERROR, got wrong bytes from FPGA Raspbootin: [" + new String(buffer) + "]");
 			}
 		} catch (SerialPortException ex) {
