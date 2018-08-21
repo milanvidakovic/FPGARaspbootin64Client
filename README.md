@@ -15,7 +15,7 @@ java -jar Raspbootin64Client.jar gui
 
 This will start the GUI and then you can do the same, but this time, you can use the built-in terminal to see what is RPI sending, and to type text to be sent via serial back to the RPI.
 
-If the upload was successfull, the loader will start the uploaded program. 
+If the upload was successful, the loader will start the uploaded program. 
 
 Machine code is created using the fork of the customasm. It can be found here:
 https://github.com/milanvidakovic/FPGAcustomasm
