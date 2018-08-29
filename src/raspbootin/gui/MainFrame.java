@@ -184,6 +184,10 @@ public class MainFrame extends JFrame {
 						String receivedData = serialPort.readString(e.getEventValue());
 						taIo.append(receivedData);
 						taIo.setCaretPosition(taIo.getText().length());
+						byte[] buff = receivedData.getBytes();
+						for (int i = 0; i < buff.length; i++) {
+							System.out.printf("%02x ", buff[i]);
+						}
 					} catch (SerialPortException ex) {
 						ex.printStackTrace();
 					}

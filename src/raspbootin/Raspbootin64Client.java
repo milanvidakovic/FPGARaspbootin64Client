@@ -85,7 +85,7 @@ public class Raspbootin64Client {
 						for (int i = 0; i < 1024; i++) {
 							in.read();
 						}
-						int sum = 0;
+						short sum = 0;
 						byte b;
 						while ((read = in.read(buffer)) != -1) {
 							for (int i = 0; i < read; i++) {
