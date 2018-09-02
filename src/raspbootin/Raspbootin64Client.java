@@ -112,10 +112,11 @@ public class Raspbootin64Client {
 								System.out.printf("%02x ", buffer[i]);
 							}
 							int checksum = calcSize(buffer);
-							if (checksum == sum) {
-								print.accept("OK, received checksum is the same as the original: " + sum);
+							int isum = (sum > 0) ? sum : 65536 + sum;
+							if (checksum == isum) {
+								print.accept("OK, received checksum is the same as the original: " + isum);
 							} else {
-								print.accept("ERROR, received checksum WRONG: " + checksum + ". Original sum: " + sum);
+								print.accept("ERROR, received checksum WRONG: " + checksum + ". Original sum: " + isum);
 							}
 						} else {
 							print.accept("\nERROR, did not receive file checksum from FPGA, or wrong number of bytes received.");
