@@ -20,6 +20,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
+import javax.swing.filechooser.FileFilter;
 
 import jssc.SerialPort;
 import jssc.SerialPortEvent;
@@ -288,6 +289,18 @@ public class MainFrame extends JFrame {
 	private void browseForImgFile() {
 		try {
 			JFileChooser fc = new JFileChooser(ini.getString("image", "fileName", "."));
+			fc.setFileFilter(new FileFilter() {
+				@Override
+				public boolean accept(File f) {
+					if (f.getName().endsWith(".bin"))
+						return true;
+					return false;
+				}
+				@Override
+				public String getDescription() {
+					return null;
+				}
+			});
 			fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 			if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 				File chosen = fc.getSelectedFile();
