@@ -103,7 +103,8 @@ public class Raspbootin64Client {
 						print.accept(
 								"\nSent " + total + " bytes.\n");
 						Thread.sleep(100);
-						System.out.println("Sum of all bytes: " + sum);
+						print.accept("Received checksum: " + (sum < 0 ? 65536 + sum : sum) + "\n");
+						Thread.sleep(100);
 						int bytesLeft = serialPort.getInputBufferBytesCount(); 
 						System.out.println("Bytes left: " + bytesLeft);
 						if (bytesLeft >= 2) {
@@ -114,9 +115,9 @@ public class Raspbootin64Client {
 							int checksum = calcSize(buffer);
 							int isum = (sum > 0) ? sum : 65536 + sum;
 							if (checksum == isum) {
-								print.accept("OK, received checksum is the same as the original: " + isum);
+								print.accept("OK, received checksum is the same as the calculated checksum: " + isum);
 							} else {
-								print.accept("ERROR, received checksum WRONG: " + checksum + ". Original sum: " + isum);
+								print.accept("ERROR, received checksum WRONG: " + checksum + ". Calculated checksum: " + isum);
 							}
 						} else {
 							print.accept("\nERROR, did not receive file checksum from FPGA, or wrong number of bytes received.");
