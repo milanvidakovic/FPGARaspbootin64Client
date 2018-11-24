@@ -28,6 +28,7 @@ import jssc.SerialPortEventListener;
 import jssc.SerialPortException;
 import raspbootin.Raspbootin64Client;
 import raspbootin.util.IniFile;
+import raspbootin.util.WindowUtil;
 
 public class MainFrame extends JFrame {
 
@@ -61,14 +62,13 @@ public class MainFrame extends JFrame {
 			JOptionPane.showMessageDialog(this, "Problem with opening ini file: " + ex.getMessage(), "Error",
 					JOptionPane.ERROR_MESSAGE);
 		}
-		setLocation(ini.getInt("main", "x", 100), ini.getInt("main", "y", 100));
-		setSize(ini.getInt("main", "w", 800), ini.getInt("main", "h", 600));
+		setTitle("FPGA Raspbootin client");
+		WindowUtil.setLocation(ini.getInt("main", "x", 100), ini.getInt("main", "y", 100), ini.getInt("main", "w", 800), ini.getInt("main", "h", 600), this);
 
 		serialPort = new SerialPort(ini.getString("serial", "port", "COM5"));
 
 		settings = new SettingsDialog(this);
-		settings.setLocation(ini.getInt("settings", "x", 100), ini.getInt("settings", "y", 100));
-		settings.setSize(ini.getInt("settings", "w", 800), ini.getInt("settings", "h", 600));
+		WindowUtil.setLocation(ini.getInt("settings", "x", 100), ini.getInt("settings", "y", 100), ini.getInt("settings", "w", 800), ini.getInt("settings", "h", 600), settings);
 				
 		addWindowListener(new WindowAdapter() {
 			@Override
@@ -292,13 +292,14 @@ public class MainFrame extends JFrame {
 			fc.setFileFilter(new FileFilter() {
 				@Override
 				public boolean accept(File f) {
+					if (f.isDirectory()) return true;
 					if (f.getName().endsWith(".bin"))
 						return true;
 					return false;
 				}
 				@Override
 				public String getDescription() {
-					return null;
+					return "Binary executables";
 				}
 			});
 			fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
