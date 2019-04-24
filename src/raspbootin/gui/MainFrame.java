@@ -8,9 +8,14 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -26,6 +31,7 @@ import jssc.SerialPort;
 import jssc.SerialPortEvent;
 import jssc.SerialPortEventListener;
 import jssc.SerialPortException;
+import jssc.SerialPortList;
 import raspbootin.Raspbootin64Client;
 import raspbootin.util.IniFile;
 import raspbootin.util.WindowUtil;
@@ -46,8 +52,16 @@ public class MainFrame extends JFrame {
 	private JScrollPane sc = new JScrollPane(taIo);
 
 	private JPanel pnlBottom = new JPanel();
+	private JCheckBox chkRunAuto = new JCheckBox("Auto Run FPGA");
+	private JButton btnRunFpga = new JButton("Run FPGA manually");
+	private JCheckBox chk32bit = new JCheckBox("32-bit");
 	private JButton btnSettings = new JButton("Settings");
 	private JButton btnExit = new JButton("Exit");
+
+	// Path to the SOF file
+	public static String sofPath;
+	// Path to the quartus_pgm file
+	public static String qpfPath;
 
 	private SettingsDialog settings;
 
@@ -64,8 +78,14 @@ public class MainFrame extends JFrame {
 		}
 		setTitle("FPGA Raspbootin client");
 		WindowUtil.setLocation(ini.getInt("main", "x", 100), ini.getInt("main", "y", 100), ini.getInt("main", "w", 800), ini.getInt("main", "h", 600), this);
+		chk32bit.setSelected(ini.getInt("main", "32-bit", 1) == 1);
+		chkRunAuto.setSelected(ini.getInt("main", "autorunfpga", 0) == 1);
 
 		serialPort = new SerialPort(ini.getString("serial", "port", "COM5"));
+		
+		sofPath = ini.getString("sof", "path", "c:\\Prj\\Altera\\computer32.2\\computer.sof");
+		qpfPath = ini.getString("qpf", "path", "C:\\altera\\13.0\\quartus\\bin\\quartus_pgm.exe");
+
 
 		settings = new SettingsDialog(this);
 		WindowUtil.setLocation(ini.getInt("settings", "x", 100), ini.getInt("settings", "y", 100), ini.getInt("settings", "w", 800), ini.getInt("settings", "h", 600), settings);
@@ -78,6 +98,8 @@ public class MainFrame extends JFrame {
 				ini.setInt("main", "y", getLocation().y);
 				ini.setInt("main", "h", getSize().height);
 				ini.setInt("main", "w", getSize().width);
+				ini.setInt("main", "32-bit", chk32bit.isSelected()?1:0);
+				ini.setInt("main", "autorunfpga", chkRunAuto.isSelected()?1:0);
 
 				ini.setInt("settings", "x", settings.getLocation().x);
 				ini.setInt("settings", "y", settings.getLocation().y);
@@ -95,7 +117,10 @@ public class MainFrame extends JFrame {
 				}
 			}
 		});
-
+		if (SerialPortList.getPortNames().length == 0 ) {
+			JOptionPane.showMessageDialog(this, "No serial ports detected", "Problem", JOptionPane.WARNING_MESSAGE);
+			System.exit(1);
+		}
 		setUpLayout();
 		setVisible(true);
 	}
@@ -163,12 +188,36 @@ public class MainFrame extends JFrame {
 		getContentPane().add(pnlCenter, BorderLayout.CENTER);
 
 		pnlBottom.setLayout(new FlowLayout(FlowLayout.RIGHT));
+		pnlBottom.add(chkRunAuto);
+		pnlBottom.add(btnRunFpga);
+		pnlBottom.add(chk32bit);
 		pnlBottom.add(btnSettings);
 		pnlBottom.add(btnExit);
+		btnRunFpga.addActionListener(e -> runFpga());
 		btnSettings.addActionListener(e -> settings.setVisible(true));
 		btnExit.addActionListener(e -> this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING)));
 
 		getContentPane().add(pnlBottom, BorderLayout.SOUTH);
+	}
+
+	public static void runFpga() {
+		Process process;
+		try {
+			process = new ProcessBuilder(qpfPath,
+					"-c", "usb-blaster",
+					"-m", "jtag",
+					"-o", "P;" + sofPath).start();
+			InputStream is = process.getInputStream();
+			InputStreamReader isr = new InputStreamReader(is);
+			BufferedReader br = new BufferedReader(isr);
+			String line;
+
+			while ((line = br.readLine()) != null) {
+			  System.out.println(line);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void initSerialCommunication() throws SerialPortException {
@@ -240,7 +289,7 @@ public class MainFrame extends JFrame {
 						if (imgFile.exists() && imgFile.isFile()) {
 							publish("\nPower on your FPGA...\n");
 							Raspbootin64Client.connectAndSend(MainFrame.this.serialPort, tfImgFile.getText(),
-									toPrint -> publish(toPrint));
+									toPrint -> publish(toPrint), chk32bit.isSelected(), chkRunAuto.isSelected());
 							initSerialCommunication();
 						} else {
 							JOptionPane.showMessageDialog(MainFrame.this,
@@ -265,6 +314,7 @@ public class MainFrame extends JFrame {
 				 */
 				@Override
 				protected void done() {
+					System.out.println("WORKER DONE");
 				}
 			};
 			worker.execute();

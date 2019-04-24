@@ -10,8 +10,16 @@ import raspbootin.gui.MainFrame;
 
 public class Raspbootin64Client {
 
-	public static SerialPort connectAndSend(SerialPort serialPort, String fileName, Consumer<String> print) throws Exception {
+	public static SerialPort connectAndSend(SerialPort serialPort, String fileName, Consumer<String> print,
+			boolean is32bit, boolean startFpga) throws Exception {
 		try {
+			long startAddr;
+			if (is32bit) {
+				startAddr = 0xB000L;
+			} else {
+				startAddr = 1024L;
+			}
+
 			if (!serialPort.isOpened()) {
 				// Open serial port
 				serialPort.openPort();
@@ -23,6 +31,9 @@ public class Raspbootin64Client {
 				serialPort.removeEventListener();
 			}
 			print.accept("Connecting to the Raspbootin...");
+			if (startFpga) {
+				MainFrame.runFpga();
+			}
 			// Read 8+3 bytes from the serial port (name + load_ready)
 			byte[] buffer;
 			String s = "";
@@ -32,7 +43,7 @@ public class Raspbootin64Client {
 					s += new String(buffer);
 				}
 			} while (buffer[0] != 3);
-			
+
 			Thread.sleep(100);
 
 			buffer = new byte[2];
@@ -50,7 +61,8 @@ public class Raspbootin64Client {
 				if (f.exists() && f.isFile()) {
 
 					long size = f.length();
-					size -= 1024L;
+					size -= startAddr;
+
 					long sizeToSend = size;
 
 					Thread.sleep(100);
@@ -72,17 +84,17 @@ public class Raspbootin64Client {
 					buffer = serialPort.readBytes(2);
 
 					Thread.sleep(100);
-					
+
 					int returnSize = calcSize(buffer);
-					print.accept("\nGot the response from Raspbootin64: " + returnSize);
-					
+					print.accept("\nGot the response (returned size) from Raspbootin64: " + returnSize);
+
 //					if (buffer[0] == 'O' && buffer[1] == 'K') {
 					if (returnSize == sizeToSend) {
 						// File length OK, proceed with upload.
 						FileInputStream in = new FileInputStream(f);
 						buffer = new byte[1024];
 						int read, total = 0;
-						for (int i = 0; i < 1024; i++) {
+						for (int i = 0; i < startAddr; i++) {
 							in.read();
 						}
 						short sum = 0;
@@ -91,7 +103,7 @@ public class Raspbootin64Client {
 							for (int i = 0; i < read; i++) {
 								b = buffer[i];
 								serialPort.writeByte(b);
-								//Thread.sleep(1);
+								// Thread.sleep(1);
 								sum += b < 0 ? 256 + b : b;
 							}
 							total += read;
@@ -99,13 +111,12 @@ public class Raspbootin64Client {
 						in.close();
 
 						Thread.sleep(100);
-						
-						print.accept(
-								"\nSent " + total + " bytes.\n");
+
+						print.accept("\nSent " + total + " bytes.\n");
 						Thread.sleep(100);
-						print.accept("Received checksum: " + (sum < 0 ? 65536 + sum : sum) + "\n");
+						print.accept("Calculated checksum: " + (sum < 0 ? 65536 + sum : sum) + "\n");
 						Thread.sleep(100);
-						int bytesLeft = serialPort.getInputBufferBytesCount(); 
+						int bytesLeft = serialPort.getInputBufferBytesCount();
 						System.out.println("Bytes left: " + bytesLeft);
 						if (bytesLeft >= 2) {
 							buffer = serialPort.readBytes(bytesLeft);
@@ -117,10 +128,12 @@ public class Raspbootin64Client {
 							if (checksum == isum) {
 								print.accept("OK, received checksum is the same as the calculated checksum: " + isum);
 							} else {
-								print.accept("ERROR, received checksum WRONG: " + checksum + ". Calculated checksum: " + isum);
+								print.accept("ERROR, received checksum WRONG: " + checksum + ". Calculated checksum: "
+										+ isum);
 							}
 						} else {
-							print.accept("\nERROR, did not receive file checksum from FPGA, or wrong number of bytes received.");
+							print.accept(
+									"\nERROR, did not receive file checksum from FPGA, or wrong number of bytes received.");
 							buffer = serialPort.readBytes(bytesLeft);
 							for (int i = 0; i < buffer.length; i++) {
 								System.out.printf("%02x ", buffer[i]);
@@ -155,10 +168,11 @@ public class Raspbootin64Client {
 	public static void main(String[] args) {
 		try {
 			if (args.length == 2) {
-				Raspbootin64Client.connectAndSend(new SerialPort(args[0]), args[1], toPrint -> System.out.print(toPrint)).closePort();
-			} else if (args.length == 0 || args.length > 2) {
-				System.err.println("Usage: java FPGARaspbootin64Client <com_port> <file_path>");
-				System.err.println("Example: java FPGARaspbootin64Client COM3 C:\\Temp\\kernel8.img");
+				Raspbootin64Client.connectAndSend(new SerialPort(args[0]), args[1],
+						toPrint -> System.out.print(toPrint), true, false).closePort();
+			} else if (args.length == 0 || args.length > 3) {
+				System.err.println("Usage: java FPGARaspbootin64Client <com_port> <file_path> 32-bit|16-bit");
+				System.err.println("Example: java FPGARaspbootin64Client COM3 C:\\Temp\\kernel8.img 32");
 			} else if (args.length == 1 && args[0].equalsIgnoreCase("gui")) {
 				new MainFrame();
 			}

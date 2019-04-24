@@ -4,12 +4,17 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.io.File;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.filechooser.FileFilter;
 
 import jssc.SerialPort;
 import jssc.SerialPortList;
@@ -22,6 +27,17 @@ public class SettingsDialog extends JDialog {
 	private JPanel pnlSettings = new JPanel(); 
 	private JLabel lComPort = new JLabel("Serial port:");
 	private JComboBox<String> cbPorts = new JComboBox<String>();
+
+	JLabel lblQpfPath = new JLabel("quartus_pgm path:");
+	JTextField tfQpfPath = new JTextField("");
+	JButton btnQpfPath = new JButton("Browse");
+
+	JLabel lblSofPath = new JLabel("SOF file path:");
+	JTextField tfSofPath = new JTextField("");
+	JButton btnSofPath = new JButton("Browse");
+
+	private String sofPath;
+	private String qpfPath;
 	
 	private JPanel pnlBottom = new JPanel(); 
 	private JButton btnOk = new JButton("Ok");
@@ -46,9 +62,53 @@ public class SettingsDialog extends JDialog {
 		gbc.weightx = 1;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		pnlSettings.add(cbPorts, gbc);
-		getContentPane().add(pnlSettings, BorderLayout.CENTER);
+		getContentPane().add(pnlSettings, BorderLayout.NORTH);
 		
 		fillPortsCombo(parent.ini);
+		
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 1;
+		pnlSettings.add(lblQpfPath, gbc);
+
+		gbc = new GridBagConstraints();
+		gbc.gridx = 1;
+		gbc.gridy = 1;
+		// gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.anchor = GridBagConstraints.LINE_START;
+		gbc.weightx = 1;
+		qpfPath = parent.ini.getString("qpf", "path", "C:\\altera\\13.0\\quartus\\bin\\quartus_pgm.exe");
+		tfQpfPath.setText(qpfPath);
+		pnlSettings.add(tfQpfPath, gbc);
+
+		gbc = new GridBagConstraints();
+		gbc.gridx = 2;
+		gbc.gridy = 1;
+		pnlSettings.add(btnQpfPath, gbc);
+		btnQpfPath.addActionListener(e -> findQpfFile());
+
+		gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 2;
+		pnlSettings.add(lblSofPath, gbc);
+
+		gbc = new GridBagConstraints();
+		gbc.gridx = 1;
+		gbc.gridy = 2;
+		// gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.anchor = GridBagConstraints.LINE_START;
+		gbc.weightx = 1;
+		sofPath = parent.ini.getString("sof", "path", "c:\\Prj\\Altera\\computer32.2\\computer.sof");
+		tfSofPath.setText(sofPath);
+		pnlSettings.add(tfSofPath, gbc);
+
+		gbc = new GridBagConstraints();
+		gbc.gridx = 2;
+		gbc.gridy = 2;
+		pnlSettings.add(btnSofPath, gbc);
+		btnSofPath.addActionListener(e -> findSofFile());
 		
 		pnlBottom.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		pnlBottom.add(btnOk);
@@ -60,6 +120,20 @@ public class SettingsDialog extends JDialog {
 		btnCancel.addActionListener( e -> this.setVisible(false));
 	}
 
+	private void findSofFile() {
+		String ret = browseForImgFile(sofPath, ".sof", "SOF file"); 
+		if (ret != null) {
+			sofPath = ret;
+		}
+	}
+
+	private void findQpfFile() {
+		String ret = browseForImgFile(qpfPath, ".exe", "Quartus quarts_pgm exetutable file"); 
+		if (ret != null) {
+			qpfPath = ret;
+		}
+	}
+
 	private void fillPortsCombo(IniFile ini) {
 		String[] portNames = SerialPortList.getPortNames();
 		for (String port : portNames) {
@@ -69,6 +143,9 @@ public class SettingsDialog extends JDialog {
 	}
 
 	private void saveToIni(MainFrame parent) {
+		MainFrame.qpfPath = qpfPath;
+		MainFrame.sofPath = sofPath;
+		
 		parent.ini.setString("serial", "port", cbPorts.getSelectedItem().toString());
 		parent.serialPort = new SerialPort(cbPorts.getSelectedItem().toString());
 		parent.ini.setInt("settings", "x", getLocation().x);
@@ -80,4 +157,32 @@ public class SettingsDialog extends JDialog {
 		setVisible(false);
 	}
 
+	private String browseForImgFile(String filePath, String filter, String desc) {
+		try {
+			JFileChooser fc = new JFileChooser(filePath);
+			fc.setFileFilter(new FileFilter() {
+				@Override
+				public boolean accept(File f) {
+					if (f.isDirectory()) return true;
+					if (f.getName().endsWith(filter))
+						return true;
+					return false;
+				}
+				@Override
+				public String getDescription() {
+					return desc;
+				}
+			});
+			fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			fc.setSelectedFile(new File(filePath));
+			if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+				File chosen = fc.getSelectedFile();
+				return chosen.getCanonicalPath();
+			} else return null;
+		} catch (Exception e) {
+			e.printStackTrace();
+			JOptionPane.showMessageDialog(this, "Problem with file");
+			return null;
+		}
+	}
 }
