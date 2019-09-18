@@ -124,6 +124,7 @@ public class SettingsDialog extends JDialog {
 		String ret = browseForImgFile(sofPath, ".sof", "SOF file"); 
 		if (ret != null) {
 			sofPath = ret;
+			tfSofPath.setText(sofPath);
 		}
 	}
 
@@ -131,6 +132,7 @@ public class SettingsDialog extends JDialog {
 		String ret = browseForImgFile(qpfPath, ".exe", "Quartus quarts_pgm exetutable file"); 
 		if (ret != null) {
 			qpfPath = ret;
+			tfQpfPath.setText(qpfPath);
 		}
 	}
 
@@ -145,7 +147,10 @@ public class SettingsDialog extends JDialog {
 	private void saveToIni(MainFrame parent) {
 		MainFrame.qpfPath = qpfPath;
 		MainFrame.sofPath = sofPath;
-		
+
+		parent.ini.setString("qpf", "path", qpfPath);
+		parent.ini.setString("sof", "path", sofPath);
+
 		parent.ini.setString("serial", "port", cbPorts.getSelectedItem().toString());
 		parent.serialPort = new SerialPort(cbPorts.getSelectedItem().toString());
 		parent.ini.setInt("settings", "x", getLocation().x);

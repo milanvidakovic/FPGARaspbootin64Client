@@ -105,7 +105,7 @@ public class MainFrame extends JFrame {
 				ini.setInt("settings", "y", settings.getLocation().y);
 				ini.setInt("settings", "h", settings.getSize().height);
 				ini.setInt("settings", "w", settings.getSize().width);
-
+				
 				ini.saveIni();
 
 				try {
