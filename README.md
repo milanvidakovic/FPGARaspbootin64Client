@@ -1,8 +1,11 @@
 # FPGARaspbootin64Client
 
 This is a Java client for the FPGA-based Computer loader.
-You can get the FPGA Computer from the:
+You can get the FPGA Computer from the (32-bit version):
+https://github.com/milanvidakovic/FPGAComputer32
+or, 16-bit version:
 https://github.com/milanvidakovic/FPGAComputer
+
 
 This Java program tries to connect to the serial port (given as the first command line parameter) and 
 then tries to upload the given machine code file (as the second command line parameter) to the FPGA Computer. It looks like this:
