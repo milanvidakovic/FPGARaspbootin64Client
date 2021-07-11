@@ -33,11 +33,14 @@ import jssc.SerialPortEventListener;
 import jssc.SerialPortException;
 import jssc.SerialPortList;
 import raspbootin.Raspbootin64Client;
+import raspbootin.net.Rest;
 import raspbootin.util.IniFile;
 import raspbootin.util.WindowUtil;
 
 public class MainFrame extends JFrame {
-
+	
+	public static final boolean FAST = true;
+	
 	private static final long serialVersionUID = -2333246467400263743L;
 	public static byte[] readBytes = null;
 	IniFile ini;
@@ -56,6 +59,7 @@ public class MainFrame extends JFrame {
 	private JButton btnRunFpga = new JButton("Run FPGA manually");
 	private JCheckBox chk32bit = new JCheckBox("32-bit");
 	private JButton btnSettings = new JButton("Settings");
+	private JCheckBox chkFast = new JCheckBox("Fast");
 	private JButton btnExit = new JButton("Exit");
 
 	// Path to the SOF file
@@ -79,6 +83,7 @@ public class MainFrame extends JFrame {
 		setTitle("FPGA Raspbootin client");
 		WindowUtil.setLocation(ini.getInt("main", "x", 100), ini.getInt("main", "y", 100), ini.getInt("main", "w", 800), ini.getInt("main", "h", 600), this);
 		chk32bit.setSelected(ini.getInt("main", "32-bit", 1) == 1);
+		chkFast.setSelected(ini.getInt("main", "fast", 1) == 1);
 		chkRunAuto.setSelected(ini.getInt("main", "autorunfpga", 0) == 1);
 
 		serialPort = new SerialPort(ini.getString("serial", "port", "COM5"));
@@ -99,6 +104,7 @@ public class MainFrame extends JFrame {
 				ini.setInt("main", "h", getSize().height);
 				ini.setInt("main", "w", getSize().width);
 				ini.setInt("main", "32-bit", chk32bit.isSelected()?1:0);
+				ini.setInt("main", "fast", chkFast.isSelected()?1:0);
 				ini.setInt("main", "autorunfpga", chkRunAuto.isSelected()?1:0);
 
 				ini.setInt("settings", "x", settings.getLocation().x);
@@ -118,10 +124,16 @@ public class MainFrame extends JFrame {
 			}
 		});
 		if (SerialPortList.getPortNames().length == 0 ) {
-			JOptionPane.showMessageDialog(this, "No serial ports detected", "Problem", JOptionPane.WARNING_MESSAGE);
-			System.exit(1);
+			//JOptionPane.showMessageDialog(this, "No serial ports detected", "Problem", JOptionPane.WARNING_MESSAGE);
+			System.out.println("No serial ports detected!");
+			//System.exit(1);
 		}
 		setUpLayout();
+		
+		if (!Rest.started) {
+			Rest.init(ini.getString("image", "fileName", new File(".").getAbsolutePath() + "/FPGARaspbootin64Client.jar"));
+		}
+		
 		setVisible(true);
 	}
 
@@ -192,6 +204,7 @@ public class MainFrame extends JFrame {
 		pnlBottom.add(btnRunFpga);
 		pnlBottom.add(chk32bit);
 		pnlBottom.add(btnSettings);
+		pnlBottom.add(chkFast);
 		pnlBottom.add(btnExit);
 		btnRunFpga.addActionListener(e -> runFpga());
 		btnSettings.addActionListener(e -> settings.setVisible(true));
@@ -223,7 +236,7 @@ public class MainFrame extends JFrame {
 	private void initSerialCommunication() throws SerialPortException {
 		if (!this.serialPort.isOpened()) {
 			this.serialPort.openPort();
-			this.serialPort.setParams(SerialPort.BAUDRATE_115200, SerialPort.DATABITS_8, SerialPort.STOPBITS_1,
+			this.serialPort.setParams(chkFast.isSelected()?500000:SerialPort.BAUDRATE_115200, SerialPort.DATABITS_8, SerialPort.STOPBITS_1,
 					SerialPort.PARITY_NONE);
 		}
 		serialPort.addEventListener(new SerialPortEventListener() {
@@ -289,7 +302,7 @@ public class MainFrame extends JFrame {
 						if (imgFile.exists() && imgFile.isFile()) {
 							publish("\nPower on your FPGA...\n");
 							Raspbootin64Client.connectAndSend(MainFrame.this.serialPort, tfImgFile.getText(),
-									toPrint -> publish(toPrint), chk32bit.isSelected(), chkRunAuto.isSelected());
+									toPrint -> publish(toPrint), chk32bit.isSelected(), chkRunAuto.isSelected(), chkFast.isSelected());
 							initSerialCommunication();
 						} else {
 							JOptionPane.showMessageDialog(MainFrame.this,
