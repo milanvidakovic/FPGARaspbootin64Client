@@ -173,9 +173,11 @@ public class SettingsDialog extends JDialog {
 
 		parent.ini.setString("qpf", "path", qpfPath);
 		parent.ini.setString("sof", "path", sofPath);
-
-		parent.ini.setString("serial", "port", cbPorts.getSelectedItem().toString());
-		parent.serialPort = new SerialPort(cbPorts.getSelectedItem().toString());
+		
+		try {
+			parent.ini.setString("serial", "port", cbPorts.getSelectedItem().toString());
+			parent.serialPort = new SerialPort(cbPorts.getSelectedItem().toString());
+		} catch (Exception ex) {}
 		parent.ini.setInt("settings", "x", getLocation().x);
 		parent.ini.setInt("settings", "y", getLocation().y);
 		parent.ini.setInt("settings", "h", getSize().height);
