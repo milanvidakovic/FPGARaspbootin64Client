@@ -111,7 +111,7 @@ public class Raspbootin64Client {
 								for (int i = 0; i < read; i++) {
 									b = buffer[i];
 									serialPort.writeByte(b);
-									// Thread.sleep(1);
+									Thread.sleep(1);
 									sum += b < 0 ? 256 + b : b;
 								}
 								total += read;
@@ -205,7 +205,7 @@ public class Raspbootin64Client {
 								System.out.print("#");
 								for (int k = 0; k < read; k++) {
 									serialPort.writeByte(buffer[k]);
-//									Thread.sleep(10000);
+									//Thread.sleep(1);
 //									System.out.print(".");
 								}
 							}

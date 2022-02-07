@@ -64,8 +64,8 @@ class RestThread extends Thread {
 				StringBuilder sb = new StringBuilder();
 				for (File f : files) {
 					if (f.isDirectory()) {
-						sb.append("<" + f.getName() + ">");
-						sb.append("\n");
+						//sb.append("<" + f.getName() + ">");
+						//sb.append("\n");
 					}
 				}
 				for (File f : files) {
